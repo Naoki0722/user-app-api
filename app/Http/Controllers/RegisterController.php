@@ -20,11 +20,22 @@ class RegisterController extends Controller
             'tell' => $request->tell,
             'password' => $hashed_password,
             'account' => $request->account,
+            'introducer' => $request->introducer,
             'created_at' => $now,
             'updated_at' => $now
 
         ];
         DB::table('users')->insert($param);
+        $item = DB::table('users')->select('id')->where('email',$request->email)->get();
+        $number = $item[0]->id;
+        DB::table('authorities')->insert(
+            [
+                'boss_id' => $request->introducer,
+                'subordinate_id'=>$number,
+                'created_at' => $now,
+                'updated_at' => $now
+            ]
+        );
         return response()->json([
             'message' => 'success!',
             'data' => $param

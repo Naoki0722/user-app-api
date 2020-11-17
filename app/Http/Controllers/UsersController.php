@@ -8,6 +8,18 @@ use Illuminate\Support\Facades\DB;
 
 class UsersController extends Controller
 {
+    public function person(Request $request)
+    {
+        $item = DB::table('users')
+                ->join('authorities', 'users.id', '=', 'authorities.subordinate_id')
+                ->where('boss_id',$request->id)
+                ->get();
+        return response()->json([
+            'message' => 'user info success get!',
+            'data' => $item
+        ], 200);
+    }
+
     public function all(Request $request)
     {
         $item = DB::table('users')->get();

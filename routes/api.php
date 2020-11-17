@@ -13,5 +13,6 @@ Route::post('/login', [LoginController::class, 'post']);
 Route::post('/logout', [LogoutController::class, 'post']);
 Route::get('/user', [UsersController::class, 'get']);
 Route::get('/user/all', [UsersController::class, 'all']);
+Route::get('/user/person', [UsersController::class, 'person']);
 Route::put('/user', [UsersController::class, 'put']);
 Route::delete('/user', [UsersController::class, 'delete']);
