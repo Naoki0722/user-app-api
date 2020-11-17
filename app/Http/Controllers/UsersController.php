@@ -46,11 +46,10 @@ class UsersController extends Controller
 
     public function delete(Request $request)
     {
-        $items = DB::table('users')
+        DB::table('users')
         ->where('email', $request->email)->delete();
             return response()->json([
-                'message' => 'success delete!',
-                'data' => $items
+                'message' => 'success delete!'
             ], 200);
     }
 
