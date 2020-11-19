@@ -14,7 +14,7 @@ class AddIntroducerToUsersTable extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('introducer');  //カラム追加
+            $table->string('introducer')->nullable();  //カラム追加
         });
     }
 
@@ -26,7 +26,7 @@ class AddIntroducerToUsersTable extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            
         });
     }
 }
