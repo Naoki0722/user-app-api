@@ -8,6 +8,18 @@ use Illuminate\Support\Facades\DB;
 
 class UsersController extends Controller
 {
+    public function person(Request $request)
+    {
+        $item = DB::table('users')
+                ->join('authorities', 'users.id', '=', 'authorities.subordinate_id')
+                ->where('boss_id',$request->id)
+                ->get();
+        return response()->json([
+            'message' => 'user info success get!',
+            'data' => $item
+        ], 200);
+    }
+
     public function all(Request $request)
     {
         $item = DB::table('users')->get();
@@ -46,11 +58,12 @@ class UsersController extends Controller
 
     public function delete(Request $request)
     {
-        $items = DB::table('users')
+        DB::table('users')
         ->where('email', $request->email)->delete();
+        DB::table('authorities')
+        ->where('boss_id', $request->id)->orWhere('subordinate_id', $request->id)->delete();
             return response()->json([
-                'message' => 'success delete!',
-                'data' => $items
+                'message' => 'success delete!'
             ], 200);
     }
 
