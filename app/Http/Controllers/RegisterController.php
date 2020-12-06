@@ -44,12 +44,14 @@ class RegisterController extends Controller
             'password' => $hashed_password,
             'account' => $request->account,
             'introducer' => $request->introducer,
+            'directly' => $request->directly,
             'image_path' => $image_path,
             'created_at' => $now,
             'updated_at' => $now
-
         ];
+        //userテーブルにデータ格納
         DB::table('users')->insert($param);
+        //authoritiesテーブルにデータを格納
         $item = DB::table('users')->select('id')->where('email',$request->email)->get();
         $number = $item[0]->id;
         DB::table('authorities')->insert(
@@ -60,6 +62,39 @@ class RegisterController extends Controller
                 'updated_at' => $now
             ]
         );
+        DB::table('authorities')->insert(
+            [
+                'boss_id' => $number,
+                'subordinate_id' => $request->directly,
+                'created_at' => $now,
+                'updated_at' => $now
+            ]
+        );
+
+        $get_bossid = DB::table('authorities')->select('boss_id')->whereNotNull('boss_id')->where('subordinate_id', $request->introducer)->get();
+        foreach ($get_bossid as $key => $value) {
+            $get_boss = $value->boss_id;
+            DB::table('authorities')->insert(
+                [
+                    'boss_id' => $get_boss,
+                    'subordinate_id' => $number,
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ]
+            );
+        };
+        $get_directid = DB::table('authorities')->select('subordinate_id')->whereNotNull('boss_id')->where('boss_id', $request->directly)->get();
+        foreach ($get_directid as $key => $value) {
+            $get_direct = $value->subordinate_id;
+            DB::table('authorities')->insert(
+                [
+                    'boss_id' => $number,
+                    'subordinate_id' => $get_direct,
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ]
+            );
+        };
         return response()->json([
             'message' => 'success!',
             'data' => $param

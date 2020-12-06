@@ -60,6 +60,8 @@ class UsersController extends Controller
     {
         DB::table('users')
         ->where('email', $request->email)->delete();
+        DB::table('authorities')
+        ->where('boss_id', $request->id)->orWhere('subordinate_id', $request->id)->delete();
             return response()->json([
                 'message' => 'success delete!'
             ], 200);
