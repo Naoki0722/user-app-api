@@ -15,25 +15,25 @@ class RegisterController extends Controller
 {
     public function post(Request $request)
     {
-        $file_name = $request->img;
-        $file_name = preg_replace('/^data:image.*base64,/', '', $file_name);
-        $file_name = str_replace('', '+', $file_name);
-        $image = base64_decode($file_name);
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime_type = finfo_buffer( $finfo, $image);
-        $extensions = [
-            'image/gif' => 'gif',
-            'image/jpeg' => 'jpeg',
-            'image/png' => 'png',
-        ];
-        // 保存新ファイル名(ランダム生成)
-        $random_str = Str::random(10);
-        $filename = $random_str . '.' . $extensions[$mime_type];
+        // $file_name = $request->img;
+        // $file_name = preg_replace('/^data:image.*base64,/', '', $file_name);
+        // $file_name = str_replace('', '+', $file_name);
+        // $image = base64_decode($file_name);
+        // $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        // $mime_type = finfo_buffer( $finfo, $image);
+        // $extensions = [
+        //     'image/gif' => 'gif',
+        //     'image/jpeg' => 'jpeg',
+        //     'image/png' => 'png',
+        // ];
+        // // 保存新ファイル名(ランダム生成)
+        // $random_str = Str::random(10);
+        // $filename = $random_str . '.' . $extensions[$mime_type];
 
-        $store_dir = 'user';
-        $storefile = sprintf('%s/%s', $store_dir, $filename);
-        Storage::disk('s3')->put($storefile, $image);
-        $image_path = Storage::disk('s3')->url($storefile);
+        // $store_dir = 'user';
+        // $storefile = sprintf('%s/%s', $store_dir, $filename);
+        // Storage::disk('s3')->put($storefile, $image);
+        // $image_path = Storage::disk('s3')->url($storefile);
         $now = Carbon::now();
         $hashed_password = Hash::make($request->password);
         $param = [
@@ -45,7 +45,7 @@ class RegisterController extends Controller
             'account' => $request->account,
             'introducer' => $request->introducer,
             'directly' => $request->directly,
-            'image_path' => $image_path,
+            'image_path' => 'test',
             'created_at' => $now,
             'updated_at' => $now
         ];
