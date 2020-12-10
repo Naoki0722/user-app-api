@@ -16,7 +16,7 @@ class CreateAuthoritiesTable extends Migration
         Schema::create('authorities', function (Blueprint $table) {
             $table->id();
             $table->string('boss_id')->nullable();
-            $table->string('subordinate_id');
+            $table->string('subordinate_id')->nullable();
             $table->timestamps();
         });
     }
