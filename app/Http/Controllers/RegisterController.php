@@ -72,7 +72,7 @@ class RegisterController extends Controller
             ]
         );
 
-        $get_bossid = DB::table('authorities')->select('boss_id')->whereNotNull('boss_id')->where('subordinate_id', $request->introducer)->get();
+        $get_bossid = DB::table('authorities')->select('boss_id')->whereNotNull('subordinate_id')->where('subordinate_id', $request->introducer)->get();
         foreach ($get_bossid as $key => $value) {
             $get_boss = $value->boss_id;
             //authoritiesテーブルにデータを格納(直紹介の人以上のboss_idを取得し、直紹介以上のbossと紐付け)
@@ -85,10 +85,10 @@ class RegisterController extends Controller
                 ]
             );
         };
-        $get_directid = DB::table('authorities')->select('subordinate_id')->whereNotNull('subordinate_id')->where('boss_id', $request->directly)->get();
+        $get_directid = DB::table('authorities')->select('subordinate_id')->whereNotNull('boss_id')->where('boss_id', $request->directly)->get();
         foreach ($get_directid as $key => $value) {
             $get_direct = $value->subordinate_id;
-            //authoritiesテーブルにデータを格納(直下の人以下のsubordinate_idを取得し、直下以上と紐付ける)
+            //authoritiesテーブルにデータを格納(直下の人以下のsubordinate_idを取得し、直下以上と紐付け)
             DB::table('authorities')->insert(
                 [
                     'boss_id' => $number,
