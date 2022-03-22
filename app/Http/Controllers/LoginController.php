@@ -10,11 +10,11 @@ class LoginController extends Controller
 {
     public function post(Request $request)
     {
-        $items = DB::table('users')->where('email',$request->email)->first();
-        if (Hash::check($request->password,$items->password)) {
-            return response()->json(['auth' => true],200);
+        $items = DB::table('users')->where('email', $request->email)->first();
+        if (Hash::check($request->password, $items->password)) {
+            return response()->json(['auth' => true], 200);
         } else {
-            return response()->json(['auth' => false],400);
+            return response()->json(['auth' => false], 400);
         }
     }
 }
