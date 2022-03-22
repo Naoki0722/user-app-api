@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
 // use Illuminate\Support\Facades\Hash;
 
 class UsersController extends Controller
@@ -12,7 +13,7 @@ class UsersController extends Controller
     {
         $item = DB::table('users')
                 ->join('authorities', 'users.id', '=', 'authorities.subordinate_id')
-                ->where('boss_id',$request->id)
+                ->where('boss_id', $request->id)
                 ->get();
         return response()->json([
             'message' => 'user info success get!',
@@ -35,7 +36,7 @@ class UsersController extends Controller
         return response()->json([
             'message' => 'user info success get!',
             'data' => $item
-        ],200);
+        ], 200);
     }
 
     public function put(Request $request)
@@ -62,9 +63,8 @@ class UsersController extends Controller
         ->where('email', $request->email)->delete();
         DB::table('authorities')
         ->where('boss_id', $request->id)->orWhere('subordinate_id', $request->id)->delete();
-            return response()->json([
+        return response()->json([
                 'message' => 'success delete!'
             ], 200);
     }
-
 }

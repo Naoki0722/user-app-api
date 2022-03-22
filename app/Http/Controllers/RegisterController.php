@@ -10,7 +10,6 @@ use Illuminate\Support\Str;
 use finfo;
 use Illuminate\Support\Facades\Storage;
 
-
 class RegisterController extends Controller
 {
     public function post(Request $request)
@@ -20,7 +19,7 @@ class RegisterController extends Controller
         $file_name = str_replace('', '+', $file_name);
         $image = base64_decode($file_name);
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime_type = finfo_buffer( $finfo, $image);
+        $mime_type = finfo_buffer($finfo, $image);
         $extensions = [
             'image/gif' => 'gif',
             'image/jpeg' => 'jpeg',
@@ -52,7 +51,7 @@ class RegisterController extends Controller
         //userテーブルにデータ格納
         DB::table('users')->insert($param);
         //authoritiesテーブルにデータを格納(自分がsubordinate_idとなる)
-        $item = DB::table('users')->select('id')->where('email',$request->email)->get();
+        $item = DB::table('users')->select('id')->where('email', $request->email)->get();
         $number = $item[0]->id;
         DB::table('authorities')->insert(
             [

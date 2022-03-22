@@ -8,6 +8,6 @@ class LogoutController extends Controller
 {
     public function post(Request $request)
     {
-        return response()->json(['auth'=>false],200);
+        return response()->json(['auth'=>false], 200);
     }
 }

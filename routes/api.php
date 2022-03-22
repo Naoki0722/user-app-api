@@ -7,7 +7,6 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\UsersController;
 
-
 Route::post('/register', [RegisterController::class, 'post']);
 Route::post('/login', [LoginController::class, 'post']);
 Route::post('/logout', [LogoutController::class, 'post']);
