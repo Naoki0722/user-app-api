@@ -5,90 +5,82 @@ namespace App\Http\Controllers;
 use App\Models\Authority;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
 use Illuminate\Support\Str;
-use finfo;
 use Illuminate\Support\Facades\Storage;
-use binary;
 use Exception;
+use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 /**
  * 機能一覧
  *
  * 会員登録をする
+ * 画像アップロード処理を実行する
  */
 class RegisterController extends Controller
 {
     /**
      * 会員登録をする
      *
-     * @param Request $request
-     * @return void
+     * @param Request $request 会員登録時の入力データ
+     * @return \Illuminate\Http\JsonResponse
      */
     public function post(Request $request)
     {
-        $now = Carbon::now();
-        $imagePath = $this->uploadImage($request->img);
-        $param = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'user_id' => $request->user_id,
-            'tell' => $request->tell,
-            'password' => Hash::make($request->password),
-            'account' => $request->account,
-            'introducer' => $request->introducer,
-            'directly' => $request->directly,
-            'image_path' => $imagePath
-        ];
-        $user = User::create($param);
-        //authoritiesテーブルにデータを格納(自分がsubordinate_idとなる)
-        Authority::create([
-            'boss_id' => $request->introducer,
-            'subordinate_id'=> $user->id
-        ]);
-        //authoritiesテーブルにデータを格納(自分がboss_idとなり、直下の人がsubordinate_idとなる)
-        Authority::create([
-            'boss_id' => $user->id,
-            'subordinate_id' => $request->directly
-        ]);
-
-
-        $get_bossid = DB::table('authorities')->select('boss_id')->whereNotNull('subordinate_id')->where('subordinate_id', $request->introducer)->get();
-        foreach ($get_bossid as $key => $value) {
-            $get_boss = $value->boss_id;
+        try {
+            $imagePath = $this->uploadImage($request->img);
+            $param = [
+                'name' => $request->name,
+                'email' => $request->email,
+                'user_id' => $request->user_id,
+                'tell' => $request->tell,
+                'password' => Hash::make($request->password),
+                'account' => $request->account,
+                'introducer' => $request->introducer,
+                'directly' => $request->directly,
+                'image_path' => $imagePath
+            ];
+            $user = User::create($param);
+            //authoritiesテーブルにデータを格納(自分がsubordinate_idとなる)
+            Authority::create([
+                'boss_id' => $request->introducer,
+                'subordinate_id'=> $user->id
+            ]);
+            //authoritiesテーブルにデータを格納(自分がboss_idとなり、直下の人がsubordinate_idとなる)
+            Authority::create([
+                'boss_id' => $user->id,
+                'subordinate_id' => $request->directly
+            ]);
             //authoritiesテーブルにデータを格納(直紹介の人以上のboss_idを取得し、直紹介以上のbossと紐付け)
-            DB::table('authorities')->insert(
-                [
-                    'boss_id' => $get_boss,
+            $bossesData = Authority::getBoss($request->introducer);
+            foreach ($bossesData as $bossData) {
+                Authority::create([
+                    'boss_id' => $bossData->boss_id,
                     'subordinate_id' => $user->id,
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ]
-            );
-        };
-        $get_directid = DB::table('authorities')->select('subordinate_id')->whereNotNull('boss_id')->where('boss_id', $request->directly)->get();
-        foreach ($get_directid as $key => $value) {
-            $get_direct = $value->subordinate_id;
+                ]);
+            };
             //authoritiesテーブルにデータを格納(直下の人以下のsubordinate_idを取得し、直下以上と紐付け)
-            DB::table('authorities')->insert(
-                [
+            $directoriesData = Authority::getDirectly($request->directory);
+            foreach ($directoriesData as $directlyData) {
+                Authority::create([
                     'boss_id' => $user->id,
-                    'subordinate_id' => $get_direct,
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ]
-            );
-        };
+                    'subordinate_id' => $directlyData->subordinate_id,
+                ]);
+            };
+            $status = Response::HTTP_CREATED;
+            $message = 'user create success';
+        } catch (Throwable $e) {
+            [$status, $message] = self::outputError($e, 'user create failed');
+        }
         return response()->json([
-            'message' => 'success!',
-            'data' => $param
-        ], 200);
+            'status' => $status,
+            'message' => $message
+        ], $status);
     }
 
     /**
-     * 画像アップロード処理
+     * 画像アップロード処理を実行する。
      *
      * フロント側より画像をbase64でエンコードした状態でリクエストされる。
      * でコード後、拡張子を取得し、どのファイル形式かを確認。
@@ -100,9 +92,6 @@ class RegisterController extends Controller
      */
     private function uploadImage($img)
     {
-        // $file_name = preg_replace('/^data:image.*base64,/', '', $img);
-        // $image = base64_decode(str_replace('', '+', $file_name));
-        // $mime_type = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $image);
         $image = base64_decode($img);
         $mime_type = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $image);
         $extensions = [
