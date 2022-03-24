@@ -33,7 +33,6 @@ class RegisterController extends Controller
             $param = [
                 'name' => $request->name,
                 'email' => $request->email,
-                'user_id' => $request->user_id,
                 'tell' => $request->tell,
                 'password' => Hash::make($request->password),
                 'account' => $request->account,

@@ -14,7 +14,7 @@ class AddDirectlyToUsersTable extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('directly')->nullable();  //カラム追加
+            $table->string('directly')->nullable()->after('image_path');  //カラム追加
         });
     }
 
@@ -26,7 +26,7 @@ class AddDirectlyToUsersTable extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn('directly');
         });
     }
 }
