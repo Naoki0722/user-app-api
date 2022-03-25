@@ -37,10 +37,15 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return response()->json(['name' => Auth::user()->email], 200);
+            $status = Response::HTTP_CREATED;
+            $message = 'user create success';
+        } else {
+            [$status, $message] = self::outputError('ログイン失敗', 'user create failed');
         }
-
-        throw new Exception('ログインに失敗しました。再度お試しください');
+        return response()->json([
+            'status' => $status,
+            'message' => $message
+        ], $status);
     }
 
     /**
@@ -56,9 +61,8 @@ class AuthController extends Controller
             $param = [
                 'name' => $request->name,
                 'email' => $request->email,
-                'user_id' => $request->user_id,
-                'tell' => $request->tell,
                 'password' => Hash::make($request->password),
+                'tell' => $request->tell,
                 'account' => $request->account,
                 'introducer' => $request->introducer,
                 'directly' => $request->directly,
@@ -106,7 +110,7 @@ class AuthController extends Controller
      * ログアウト処理をする。
      *
      */
-    public function post(Request $request)
+    public function logout(Request $request)
     {
         return response()->json(['auth'=>false], 200);
     }

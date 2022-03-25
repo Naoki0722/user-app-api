@@ -20,11 +20,10 @@ class Controller extends BaseController
      * @param string $errorMessage
      * @return \Illuminate\Http\JsonResponse
      */
-    public static function outputError($e, $errorMessage)
+    public static function outputError($errorDetail, $returnMessage)
     {
-        Log::info('error detail', [$e->getMessage()]);
+        Log::info('error detail', [$errorDetail]);
         $status = Response::HTTP_INTERNAL_SERVER_ERROR;
-        $message = $errorMessage;
-        return [$status, $message];
+        return [$status, $returnMessage];
     }
 }
