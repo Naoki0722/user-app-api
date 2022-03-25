@@ -4,29 +4,52 @@ namespace App\Http\Controllers;
 
 use App\Models\Authority;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 /**
  * 機能一覧
  *
+ * ログインする
  * 会員登録をする
  * 画像アップロード処理を実行する
  */
-class RegisterController extends Controller
+class AuthController extends Controller
 {
+    /**
+     * ログインする。
+     *
+     * @param Request $request 会員登録時の入力データ
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => 'required',
+        ]);
+
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+            return response()->json(['name' => Auth::user()->email], 200);
+        }
+
+        throw new Exception('ログインに失敗しました。再度お試しください');
+    }
+
     /**
      * 会員登録をする
      *
      * @param Request $request 会員登録時の入力データ
      * @return \Illuminate\Http\JsonResponse
      */
-    public function post(Request $request)
+    public function register(Request $request)
     {
         try {
             $imagePath = $this->uploadImage($request->img);
@@ -77,6 +100,15 @@ class RegisterController extends Controller
             'status' => $status,
             'message' => $message
         ], $status);
+    }
+
+    /**
+     * ログアウト処理をする。
+     *
+     */
+    public function post(Request $request)
+    {
+        return response()->json(['auth'=>false], 200);
     }
 
     /**
