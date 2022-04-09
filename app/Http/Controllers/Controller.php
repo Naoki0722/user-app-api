@@ -38,13 +38,14 @@ class Controller extends BaseController
      *
      * @param int $status ステータスコード
      * @param string $message 返答メッセージ
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public static function respondJson($status, $message)
+    public static function respondJson($status, $message, $data=null)
     {
         return response()->json([
-            'status' => $status,
-            'message' => $message
+            'status'  => $status,
+            'message' => $message,
+            'data'    => $data
         ], $status);
     }
 }
