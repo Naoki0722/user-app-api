@@ -40,16 +40,13 @@ class AuthController extends Controller
             ]);
             if (Auth::attempt($credentials)) {
                 $request->session()->regenerate();
-                $status = Response::HTTP_OK;
-                $message = 'user login success';
-            } else {
-                $status = Response::HTTP_UNAUTHORIZED;
-                $message = 'user login failed';
+                return self::respondJson(Response::HTTP_OK, 'user login success');
             }
+            return self::respondJson(Response::HTTP_UNAUTHORIZED, 'user login failed auth');
         } catch (Exception $e) {
             [$status, $message] = self::outputError($e->getMessage(), 'user login failed');
+            return self::respondJson($status, $message);
         }
-        return self::respondJson($status, $message);
     }
 
     /**

@@ -56,21 +56,15 @@ class UserController extends Controller
         if (Auth::id() === $id) {
             $data = $request->all();
             User::find($id)->update($data);
-            return response()->json([
-                'message' => 'success update!',
-                'data' => $data
-            ], 200);
-        } else {
-            return response()->json([
-                'message' => '自分以外のデータは変更できません'
-            ], 500);
+            return self::respondJson(Response::HTTP_OK, 'success update!', $data);
         }
+        return self::respondJson(Response::HTTP_INTERNAL_SERVER_ERROR, 'cannot update except your own');
     }
 
     /**
      * 退会処理をする。
      *
-     * @param int $id
+     * @param int $id ユーザーID
      * @return \Illuminate\Http\JsonResponse
      */
     public function delete($id)
@@ -78,13 +72,8 @@ class UserController extends Controller
         if (Auth::id() === $id) {
             User::find($id)->delete();
             Authority::where('boss_id', $id)->orWhere('subordinate_id', $id)->delete();
-            return response()->json([
-                'message' => 'success delete!'
-            ], 200);
-        } else {
-            return response()->json([
-                'message' => '自分以外のデータは削除できません'
-            ], 500);
+            return self::respondJson(Response::HTTP_OK, 'success delete!');
         }
+        return self::respondJson(Response::HTTP_INTERNAL_SERVER_ERROR, 'cannot delete except your own');
     }
 }
