@@ -32,4 +32,12 @@ class Authority extends Model
             ->where('boss_id', $directly)
             ->get();
     }
+
+    public static function registerAuthority($bossId, $subordinateId)
+    {
+        Authority::create([
+            'boss_id' => $bossId,
+            'subordinate_id' => $subordinateId
+        ]);
+    }
 }

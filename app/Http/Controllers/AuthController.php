@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RegisterRequest;
 use App\Models\Authority;
 use App\Models\User;
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
-use Throwable;
+use Exception;
 
 /**
  * 機能一覧
  *
  * ログインする
+ * ログアウト処理をする
  * 会員登録をする
  * 画像アップロード処理を実行する
  */
@@ -30,80 +30,23 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => 'required',
-        ]);
-
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            $status = Response::HTTP_CREATED;
-            $message = 'user create success';
-        } else {
-            [$status, $message] = self::outputError('ログイン失敗', 'user create failed');
-        }
-        return response()->json([
-            'status' => $status,
-            'message' => $message
-        ], $status);
-    }
-
-    /**
-     * 会員登録をする
-     *
-     * @param Request $request 会員登録時の入力データ
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function register(Request $request)
-    {
         try {
-            $imagePath = $this->uploadImage($request->img);
-            $param = [
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'tell' => $request->tell,
-                'account' => $request->account,
-                'introducer' => $request->introducer,
-                'directly' => $request->directly,
-                'image_path' => $imagePath
-            ];
-            $user = User::create($param);
-            //authoritiesテーブルにデータを格納(自分がsubordinate_idとなる)
-            Authority::create([
-                'boss_id' => $request->introducer,
-                'subordinate_id'=> $user->id
+            $credentials = $request->validate([
+                'email' => ['required', 'email'],
+                'password' => 'required',
             ]);
-            //authoritiesテーブルにデータを格納(自分がboss_idとなり、直下の人がsubordinate_idとなる)
-            Authority::create([
-                'boss_id' => $user->id,
-                'subordinate_id' => $request->directly
-            ]);
-            //authoritiesテーブルにデータを格納(直紹介の人以上のboss_idを取得し、直紹介以上のbossと紐付け)
-            $bossesData = Authority::getBoss($request->introducer);
-            foreach ($bossesData as $bossData) {
-                Authority::create([
-                    'boss_id' => $bossData->boss_id,
-                    'subordinate_id' => $user->id,
-                ]);
-            };
-            //authoritiesテーブルにデータを格納(直下の人以下のsubordinate_idを取得し、直下以上と紐付け)
-            $directoriesData = Authority::getDirectly($request->directory);
-            foreach ($directoriesData as $directlyData) {
-                Authority::create([
-                    'boss_id' => $user->id,
-                    'subordinate_id' => $directlyData->subordinate_id,
-                ]);
-            };
-            $status = Response::HTTP_CREATED;
-            $message = 'user create success';
-        } catch (Throwable $e) {
-            [$status, $message] = self::outputError($e, 'user create failed');
+            if (Auth::attempt($credentials)) {
+                $request->session()->regenerate();
+                $status = Response::HTTP_OK;
+                $message = 'user login success';
+            } else {
+                $status = Response::HTTP_UNAUTHORIZED;
+                $message = 'user login failed';
+            }
+        } catch (Exception $e) {
+            [$status, $message] = self::outputError($e->getMessage(), 'user login failed');
         }
-        return response()->json([
-            'status' => $status,
-            'message' => $message
-        ], $status);
+        return self::respondJson($status, $message);
     }
 
     /**
@@ -112,7 +55,48 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        return response()->json(['auth'=>false], 200);
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return self::respondJson(Response::HTTP_OK, 'user logout success');
+    }
+
+    /**
+     * 会員登録をする
+     *
+     * @param Request $request 会員登録時の入力データ
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function register(RegisterRequest $request)
+    {
+        try {
+            $imagePath = $this->uploadImageToS3($request->img);
+            $user = User::regsiterUser($request, $imagePath);
+
+            //authoritiesテーブルにデータを格納(自分がsubordinate_idとなる)
+            Authority::registerAuthority($request->introducer, $user->id);
+
+            //authoritiesテーブルにデータを格納(自分がboss_idとなり、直下の人がsubordinate_idとなる)
+            Authority::registerAuthority($user->id, $request->directory);
+
+            //authoritiesテーブルにデータを格納(直紹介の人以上のboss_idを取得し、直紹介以上のbossと紐付け)
+            $bossesData = Authority::getBoss($request->introducer);
+            foreach ($bossesData as $bossData) {
+                Authority::registerAuthority($bossData->boss_id, $user->id);
+            }
+
+            //authoritiesテーブルにデータを格納(直下の人以下のsubordinate_idを取得し、直下以上と紐付け)
+            $directoriesData = Authority::getDirectly($request->directory);
+            foreach ($directoriesData as $directlyData) {
+                Authority::registerAuthority($user->id, $directlyData->subordinate_id);
+            }
+
+            $status = Response::HTTP_CREATED;
+            $message = 'user create success';
+        } catch (Exception $e) {
+            [$status, $message] = self::outputError($e->getMessage(), 'user create failed');
+        }
+        return self::respondJson($status, $message);
     }
 
     /**
@@ -123,24 +107,26 @@ class AuthController extends Controller
      * AWS S3に user/画像ファイル名 で保存する
      * 保存したURLパスを取得する(DB保存用)
      *
-     * @param string $img base64形式のバイナリーデータ
+     * @param string $binaryImage base64形式のバイナリーデータ
      * @return string 画像URL
      */
-    private function uploadImage($img)
+    private function uploadImageToS3($binaryImage)
     {
-        $image = base64_decode($img);
-        $mime_type = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $image);
+        $decodeImage = base64_decode(
+            str_replace('', '+', preg_replace('/^data:image.*base64,/', '', $binaryImage))
+        );
+        $mimeType = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $decodeImage);
         $extensions = [
             'image/gif'  => 'gif',
             'image/jpeg' => 'jpeg',
             'image/png'  => 'png',
         ];
-        $fileName = Str::random(10) . '.' . $extensions[$mime_type];
-        $putS3File = "user/{$fileName}";
-        $putFile = Storage::disk('s3')->put($putS3File, $image);
+        $imageFileName = Str::random(10) . '.' . $extensions[$mimeType];
+        $s3Folder = "user/{$imageFileName}";
+        $putFile = Storage::disk('s3')->put($s3Folder, $decodeImage);
         if ($putFile) {
-            return Storage::disk('s3')->url($putS3File);
+            return Storage::disk('s3')->url($s3Folder);
         }
-        return throw new Exception("failed s3 upload");
+        return null;
     }
 }

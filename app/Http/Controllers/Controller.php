@@ -9,6 +9,12 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * 機能一覧
+ *
+ * エラーを出力する
+ * Jsonデータを返答する
+ */
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
@@ -24,6 +30,21 @@ class Controller extends BaseController
     {
         Log::info('error detail', [$errorDetail]);
         $status = Response::HTTP_INTERNAL_SERVER_ERROR;
-        return [$status, $returnMessage];
+        return [$status, "{$returnMessage}.detail：{$errorDetail}"];
+    }
+
+    /**
+     * Jsonデータを返答する
+     *
+     * @param int $status ステータスコード
+     * @param string $message 返答メッセージ
+     * @return \Illuminate\Http\Response
+     */
+    public static function respondJson($status, $message)
+    {
+        return response()->json([
+            'status' => $status,
+            'message' => $message
+        ], $status);
     }
 }
