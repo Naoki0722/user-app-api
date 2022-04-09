@@ -24,7 +24,7 @@ class User extends Authenticatable
         'tell',
         'account',
         'introducer',
-        'directly',
+        'directory',
         'image_path',
         'account',
         'password',

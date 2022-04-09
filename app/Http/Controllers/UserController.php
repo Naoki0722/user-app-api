@@ -2,9 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Authority;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * 機能一覧
+ *
+ * ユーザー情報を全件取得する
+ * ユーザー情報を更新する
+ * 退会処理をする
+ */
 class UserController extends Controller
 {
     public function person(Request $request)
@@ -19,50 +30,50 @@ class UserController extends Controller
         ], 200);
     }
 
-    public function all(Request $request)
+    /**
+     * ユーザー情報を全件取得する。
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function fetchAllUser()
     {
-        $item = DB::table('users')->get();
-        return response()->json([
-            'message' => 'user info success get!',
-            'data' => $item
-        ], 200);
+        return self::respondJson(
+            Response::HTTP_OK,
+            'user info success get!',
+            User::all()
+        );
     }
 
-    public function get(Request $request)
+    /**
+     * ユーザー情報を更新する。
+     *
+     * @param Request $request 更新データ
+     * @param int $id ユーザーID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function editUser(Request $request, $id)
     {
-        $item = DB::table('users')->where('email', $request->email)->get();
-        return response()->json([
-            'message' => 'user info success get!',
-            'data' => $item
-        ], 200);
+        if (Auth::id() === $id) {
+            $data = $request->all();
+            User::find($id)->update($data);
+            return self::respondJson(Response::HTTP_OK, 'success update!', $data);
+        }
+        return self::respondJson(Response::HTTP_INTERNAL_SERVER_ERROR, 'cannot update except your own');
     }
 
-    public function put(Request $request)
+    /**
+     * 退会処理をする。
+     *
+     * @param int $id ユーザーID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function delete($id)
     {
-        $param = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'tell' => $request->tell,
-            'user_id' => $request->user_id,
-            'account' => $request->account,
-        ];
-        DB::table('users')
-            ->where('email', $request->email)
-            ->update($param);
-        return response()->json([
-            'message' => 'success update!',
-            'data' => $param
-        ], 200);
-    }
-
-    public function delete(Request $request)
-    {
-        DB::table('users')
-        ->where('email', $request->email)->delete();
-        DB::table('authorities')
-        ->where('boss_id', $request->id)->orWhere('subordinate_id', $request->id)->delete();
-        return response()->json([
-                'message' => 'success delete!'
-            ], 200);
+        if (Auth::id() === $id) {
+            User::find($id)->delete();
+            Authority::where('boss_id', $id)->orWhere('subordinate_id', $id)->delete();
+            return self::respondJson(Response::HTTP_OK, 'success delete!');
+        }
+        return self::respondJson(Response::HTTP_INTERNAL_SERVER_ERROR, 'cannot delete except your own');
     }
 }
