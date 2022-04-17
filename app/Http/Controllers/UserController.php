@@ -18,11 +18,11 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class UserController extends Controller
 {
-    public function person(Request $request)
+    public function person($id)
     {
         $item = DB::table('users')
                 ->join('authorities', 'users.id', '=', 'authorities.subordinate_id')
-                ->where('boss_id', $request->id)
+                ->where('boss_id', $id)
                 ->get();
         return response()->json([
             'message' => 'user info success get!',
@@ -33,6 +33,8 @@ class UserController extends Controller
     /**
      * ユーザー情報を全件取得する。
      *
+     * 個人情報の観点から、名前のみ取得
+     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function fetchAllUser()
@@ -40,7 +42,7 @@ class UserController extends Controller
         return self::respondJson(
             Response::HTTP_OK,
             'user info success get!',
-            User::all()
+            User::get(['id', 'name'])
         );
     }
 

@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// 会員登録時に必要な上下関係を取得
+Route::get('/user/all', [UserController::class, 'fetchAllUser']);
+
 Route::group(['middleware' => ['auth:sanctum']], function () {
     // Route::get('/user', [UserController::class, 'get']);
     Route::prefix('user')->group(function () {
@@ -23,7 +26,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         });
         Route::post('/{id}', [UserController::class, 'editUser']);
         Route::delete('/', [UserController::class, 'delete']);
-        Route::get('all', [UserController::class, 'fetchAllUser']);
-        Route::get('person', [UserController::class, 'person']);
+        Route::get('person/{id}', [UserController::class, 'person']);
     });
 });
