@@ -12,12 +12,28 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * 機能一覧
  *
+ * 指定したユーザー情報を取得する
  * ユーザー情報を全件取得する
  * ユーザー情報を更新する
  * 退会処理をする
  */
 class UserController extends Controller
 {
+    /**
+     * 指定したユーザー情報を取得する
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show($id)
+    {
+        $user = User::find($id);
+        return response()->json([
+            'message' => 'user info success get!',
+            'data' => $user
+        ], 200);
+    }
+
     public function person($id)
     {
         $item = DB::table('users')

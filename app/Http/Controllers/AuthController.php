@@ -40,7 +40,7 @@ class AuthController extends Controller
             ]);
             if (Auth::attempt($credentials)) {
                 $request->session()->regenerate();
-                return self::respondJson(Response::HTTP_OK, 'user login success', Auth::id());
+                return self::respondJson(Response::HTTP_OK, 'user login success', Auth::user());
             }
             return self::respondJson(Response::HTTP_UNAUTHORIZED, 'user login failed auth');
         } catch (Exception $e) {
